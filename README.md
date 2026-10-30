@@ -3,7 +3,8 @@
 Speak into your mic and see the detected emotion. The app shows the emotion for the whole clip **and how it changes second by second**.
 It listens to *how* you speak (tone, pitch, energy), not *what* you say.
 
-**Live demo:** `<add your Hugging Face Spaces link>`
+**▶️ Live demo:** https://huggingface.co/spaces/divyanshu2404/voice-emotion-recognition  
+Runs entirely in your browser: the model is exported to ONNX, so your audio never leaves your device and hosting is free.
 
 ![demo](docs/demo.gif) <!-- record a 10-second GIF of the app and put it here -->
 
@@ -55,7 +56,19 @@ Or with Docker:
 docker build -t voice-emotion . && docker run -p 7860:7860 voice-emotion
 ```
 
-**Deploy for free:** create a Gradio Space on [Hugging Face Spaces](https://huggingface.co/spaces) and push this repo to it. `app.py` is picked up automatically.
+## Deploy (free, runs in the browser)
+
+The live demo is a static page in `web/`. There is no server: the browser runs the model itself with `onnxruntime-web`.
+
+```bash
+python export_onnx.py    # PyTorch -> ONNX, compressed to 8-bit (~120 MB); checks outputs match
+python -m http.server 8000 -d web    # try it at http://localhost:8000
+hf upload <your-username>/voice-emotion-recognition web . --repo-type space
+```
+
+`model.onnx` is too big for GitHub (100 MB limit), so it isn't committed. Run `export_onnx.py` to create it.
+Only the transformer's matrix layers are compressed: compressing every layer changed the predictions too much
+(sample clip: 91% happy instead of 51%). With matrix layers only, the output stays within ~2% of PyTorch.
 
 ## Train your own model (8 emotions)
 
@@ -73,7 +86,9 @@ To train on RAVDESS (neutral, calm, happy, sad, angry, fearful, disgust, surpris
 
 ```
 emotion/predictor.py   core logic: load model, clean audio, predict, timeline
-app.py                 web UI (Gradio + Plotly)
+app.py                 local web UI (Gradio + Plotly)
+export_onnx.py         converts the model to ONNX for the browser
+web/index.html         the live demo: runs the model in the browser
 train.py               fine-tuning on RAVDESS with a speaker-independent split
 tests/                 unit tests (probabilities sum to 1, stereo/mic input, timeline)
 Dockerfile             container for deployment
