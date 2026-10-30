@@ -1,0 +1,9 @@
+torch
+transformers
+gradio>=4.40
+librosa
+soundfile
+numpy
+plotly
+scikit-learn
+pytest
